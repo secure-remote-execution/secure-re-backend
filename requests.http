@@ -1,0 +1,60 @@
+### Secure Product Challenge - Laboratorio 3 FDSI (ECI)
+### Colección de requests para probar la API con el plugin "REST Client" de VS Code,
+### o copiando cada bloque como curl. Todos los endpoints están SIN autenticación
+### (deliberado en este laboratorio: ver TODOs "Lab 4" en los controllers).
+
+@baseUrl = http://localhost:8080
+
+### 1. Swagger UI / OpenAPI (reconocimiento típico del Red Team)
+GET {{baseUrl}}/swagger-ui.html
+
+### 1.1 Documento OpenAPI en JSON
+GET {{baseUrl}}/v3/api-docs
+
+### 2. Listar todo el inventario de dispositivos
+GET {{baseUrl}}/api/devices
+
+### 3. Filtrar dispositivos por tipo
+GET {{baseUrl}}/api/devices?type=FIREWALL
+
+### 4. Detalle de un dispositivo (usa un id real del seed, ver V3__seed_devices.sql)
+GET {{baseUrl}}/api/devices/11111111-1111-1111-1111-111111111111
+
+### 4.1 Dispositivo inexistente -> 404
+GET {{baseUrl}}/api/devices/00000000-0000-0000-0000-000000000000
+
+### 5. Simular ejecución de un script (NO ejecuta nada real)
+POST {{baseUrl}}/api/scripts/simulate
+Content-Type: application/json
+
+{
+  "deviceId": "11111111-1111-1111-1111-111111111111",
+  "scriptName": "backup-config.sh",
+  "parameters": {
+    "retries": "3",
+    "dryRun": "true"
+  }
+}
+
+### 5.1 Simulación con deviceId inexistente -> 404
+POST {{baseUrl}}/api/scripts/simulate
+Content-Type: application/json
+
+{
+  "deviceId": "00000000-0000-0000-0000-000000000000",
+  "scriptName": "backup-config.sh",
+  "parameters": {}
+}
+
+### 5.2 Simulación con body inválido (scriptName vacío) -> 400
+POST {{baseUrl}}/api/scripts/simulate
+Content-Type: application/json
+
+{
+  "deviceId": "11111111-1111-1111-1111-111111111111",
+  "scriptName": "",
+  "parameters": {}
+}
+
+### 6. Historial de simulaciones registradas (evidencia para el Blue Team)
+GET {{baseUrl}}/api/scripts/simulate/history

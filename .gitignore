@@ -1,0 +1,9 @@
+# Variables de entorno locales
+.env
+.env.local
+
+# Sistema operativo / editores
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
