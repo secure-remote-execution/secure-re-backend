@@ -1,0 +1,27 @@
+### Variables
+@baseUrl = http://localhost:8081
+
+### Listar todos los dispositivos
+GET {{baseUrl}}/api/devices
+
+### Listar dispositivos filtrados por tipo
+GET {{baseUrl}}/api/devices?type=FIREWALL
+
+### Detalle de un dispositivo (reemplaza el id por uno real devuelto arriba)
+GET {{baseUrl}}/api/devices/00000000-0000-0000-0000-000000000000
+
+### Simular ejecución de script
+POST {{baseUrl}}/api/scripts/simulate
+Content-Type: application/json
+
+{
+  "deviceId": "00000000-0000-0000-0000-000000000000",
+  "scriptName": "backup-config",
+  "parameters": "--dry-run"
+}
+
+### Historial de simulaciones
+GET {{baseUrl}}/api/scripts/simulate/history
+
+### Swagger / OpenAPI
+GET {{baseUrl}}/v3/api-docs
