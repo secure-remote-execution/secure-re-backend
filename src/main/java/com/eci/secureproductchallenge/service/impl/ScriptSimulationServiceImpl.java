@@ -13,6 +13,8 @@ import org.springframework.stereotype.Service;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Objects;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -26,12 +28,13 @@ public class ScriptSimulationServiceImpl implements ScriptSimulationService {
     public ScriptSimulationResponse simulate(ScriptSimulationRequest request) {
         // Se valida que el dispositivo exista en el inventario, pero en ningún
         // momento se abre conexión ni se envía nada al dispositivo real.
-        if (!deviceRepository.existsById(request.deviceId())) {
-            throw new ResourceNotFoundException("Dispositivo no encontrado: " + request.deviceId());
+        UUID deviceId = Objects.requireNonNull(request.deviceId(), "deviceId es obligatorio");
+        if (!deviceRepository.existsById(deviceId)) {
+            throw new ResourceNotFoundException("Dispositivo no encontrado: " + deviceId);
         }
 
         ScriptSimulation simulation = ScriptSimulation.builder()
-                .deviceId(request.deviceId())
+                .deviceId(deviceId)
                 .scriptName(request.scriptName())
                 .parameters(request.parameters())
                 .success(true)
@@ -39,7 +42,7 @@ public class ScriptSimulationServiceImpl implements ScriptSimulationService {
                 .requestedAt(Instant.now())
                 .build();
 
-        ScriptSimulation saved = simulationRepository.save(simulation);
+        ScriptSimulation saved = simulationRepository.save(Objects.requireNonNull(simulation));
         return simulationMapper.toResponse(saved);
     }
 
