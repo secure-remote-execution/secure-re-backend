@@ -8,6 +8,7 @@ import com.eci.secureproductchallenge.model.DeviceType;
 import com.eci.secureproductchallenge.repository.DeviceRepository;
 import com.eci.secureproductchallenge.service.DeviceService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -32,7 +33,7 @@ public class DeviceServiceImpl implements DeviceService {
     }
 
     @Override
-    public DeviceResponse findById(UUID id) {
+    public DeviceResponse findById(@NonNull UUID id) {
         Device device = deviceRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Dispositivo no encontrado: " + id));
         return deviceMapper.toResponse(device);
