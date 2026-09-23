@@ -23,6 +23,15 @@ spring:
     locations: classpath:db/migration
     baseline-on-migrate: true
 
+app:
+  jwt:
+    secret: ${JWT_SECRET:lab4-fdsi-dev-secret-change-me-please-0123456789abcdef}
+    expiration-minutes: ${JWT_EXPIRATION_MINUTES:480}
+  cors:
+    # Lista separada por comas. Agrega aquí el origen real del navegador si accedes
+    # por IP/dominio a través de Nginx (ej. https://10.239.28.54), o cambia por env var.
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173,https://10.239.28.54}
+
 springdoc:
   swagger-ui:
     path: /swagger-ui.html

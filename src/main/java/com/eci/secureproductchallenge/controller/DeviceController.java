@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.UUID;
 
-// TODO: Lab 4 - agregar Spring Security + JWT + roles aquí (@PreAuthorize, etc.)
+// Lab 4: requiere autenticación (Spring Security + JWT). VIEWER y ADMIN pueden leer el inventario.
 @RestController
 @RequestMapping("/api/devices")
 @RequiredArgsConstructor

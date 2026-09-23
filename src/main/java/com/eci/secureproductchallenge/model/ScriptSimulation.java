@@ -45,4 +45,7 @@ public class ScriptSimulation {
 
     @Column(name = "requested_at", nullable = false)
     private Instant requestedAt;
+
+    @Column(name = "performed_by", nullable = false, length = 50)
+    private String performedBy;
 }
