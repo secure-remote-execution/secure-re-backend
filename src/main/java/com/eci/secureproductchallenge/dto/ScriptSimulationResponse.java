@@ -13,6 +13,7 @@ public record ScriptSimulationResponse(
         String parameters,
         boolean success,
         String output,
-        Instant requestedAt
+        Instant requestedAt,
+        String performedBy
 ) {
 }

@@ -1,18 +1,42 @@
 ### Variables
 @baseUrl = http://localhost:8081
 
-### Listar todos los dispositivos
+### Login como ADMIN (puede leer y ejecutar simulaciones)
+# @name loginAdmin
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "admin",
+  "password": "Admin123!"
+}
+
+### Login como VIEWER (solo lectura)
+# @name loginViewer
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "viewer",
+  "password": "Viewer123!"
+}
+
+### Listar todos los dispositivos (requiere Authorization: Bearer <token> de cualquiera de los logins de arriba)
 GET {{baseUrl}}/api/devices
+Authorization: Bearer {{loginAdmin.response.body.token}}
 
 ### Listar dispositivos filtrados por tipo
 GET {{baseUrl}}/api/devices?type=FIREWALL
+Authorization: Bearer {{loginAdmin.response.body.token}}
 
 ### Detalle de un dispositivo (reemplaza el id por uno real devuelto arriba)
 GET {{baseUrl}}/api/devices/00000000-0000-0000-0000-000000000000
+Authorization: Bearer {{loginAdmin.response.body.token}}
 
-### Simular ejecución de script
+### Simular ejecución de script (requiere rol ADMIN)
 POST {{baseUrl}}/api/scripts/simulate
 Content-Type: application/json
+Authorization: Bearer {{loginAdmin.response.body.token}}
 
 {
   "deviceId": "00000000-0000-0000-0000-000000000000",
@@ -20,8 +44,20 @@ Content-Type: application/json
   "parameters": "--dry-run"
 }
 
-### Historial de simulaciones
-GET {{baseUrl}}/api/scripts/simulate/history
+### Simular con rol VIEWER -> debe responder 403
+POST {{baseUrl}}/api/scripts/simulate
+Content-Type: application/json
+Authorization: Bearer {{loginViewer.response.body.token}}
 
-### Swagger / OpenAPI
+{
+  "deviceId": "00000000-0000-0000-0000-000000000000",
+  "scriptName": "backup-config",
+  "parameters": "--dry-run"
+}
+
+### Historial de simulaciones (incluye performedBy)
+GET {{baseUrl}}/api/scripts/simulate/history
+Authorization: Bearer {{loginAdmin.response.body.token}}
+
+### Swagger / OpenAPI (sin autenticación)
 GET {{baseUrl}}/v3/api-docs

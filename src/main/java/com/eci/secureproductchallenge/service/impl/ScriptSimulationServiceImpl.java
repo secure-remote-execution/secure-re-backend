@@ -9,6 +9,7 @@ import com.eci.secureproductchallenge.repository.DeviceRepository;
 import com.eci.secureproductchallenge.repository.ScriptSimulationRepository;
 import com.eci.secureproductchallenge.service.ScriptSimulationService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
@@ -33,6 +34,8 @@ public class ScriptSimulationServiceImpl implements ScriptSimulationService {
             throw new ResourceNotFoundException("Dispositivo no encontrado: " + deviceId);
         }
 
+        String performedBy = SecurityContextHolder.getContext().getAuthentication().getName();
+
         ScriptSimulation simulation = ScriptSimulation.builder()
                 .deviceId(deviceId)
                 .scriptName(request.scriptName())
@@ -40,6 +43,7 @@ public class ScriptSimulationServiceImpl implements ScriptSimulationService {
                 .success(true)
                 .output("Simulación completada, sin cambios aplicados")
                 .requestedAt(Instant.now())
+                .performedBy(performedBy)
                 .build();
 
         ScriptSimulation saved = simulationRepository.save(Objects.requireNonNull(simulation));
