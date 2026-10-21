@@ -80,6 +80,16 @@ laboratorio local; no hay endpoint de registro). El JWT se envía como
 
 Ejemplos listos para usar en `requests.http` (incluye los logins).
 
+## Seguridad
+
+Trabajo de seguridad del laboratorio (rama `security/lab-fdsi`): alcance,
+activos, riesgo principal, controles de GitHub habilitados, hallazgos de
+Semgrep/Gitleaks y revisión de dependencias (SCA) — ver
+[`docs/SECURITY.md`](docs/SECURITY.md) para el detalle completo y
+[`INFORME-SEGURIDAD.md`](INFORME-SEGURIDAD.md) para el resumen
+consolidado (backend + frontend). CI de SAST/secretos en
+[`.github/workflows/seguridad-estatica.yml`](.github/workflows/seguridad-estatica.yml).
+
 ## Despliegue (servidor Ubuntu + Nginx, según guía del Lab 3)
 
 1. Empaquetar: `./mvnw clean package` → genera el JAR en `target/`.
