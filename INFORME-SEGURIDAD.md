@@ -44,12 +44,14 @@ en ambos.
 
 | Control | Estado |
 |---|---|
-| Dependabot alerts | **Habilitado** (confirmado en `Settings → Advanced Security`), 0 alertas abiertas al 2026-10-21 |
-| CodeQL Default setup | No confirmado — pendiente de habilitar |
+| Dependabot alerts | **Habilitado**, 0 alertas abiertas al 2026-10-21 |
+| CodeQL Default setup | **Habilitado** (Default setup) |
 | Secret scanning (nativo de GitHub) | No confirmado — pendiente de habilitar |
 
-No se compartieron capturas con información sensible; el estado de cada
-toggle se registró como texto en `docs/SECURITY.md` sección 2.
+Evidencia (capturas sin información sensible) en
+`docs/evidence/` de cada repo: `settings-dependabot-alerts-on.png`,
+`dependabot-alerts-0-open.png`, `settings-codeql-default-setup.png`,
+`dependency-graph.png`, `pr-checks-codeql-gitleaks-semgrep.png`.
 
 ## 3. SAST y detección de secretos
 
@@ -80,8 +82,15 @@ disparó el workflow. Se descargó el artefacto `resultado-semgrep`
 - Ningún resultado del scan se descartó como falso positivo: los 7 son
   verdaderos positivos sobre el estado actual del repo.
 
-Gitleaks corrió en el mismo workflow pero su resultado no se exportó como
-artefacto independiente, así que no se revisó en este informe.
+**Checks del PR** (captura `pr-checks-codeql-gitleaks-semgrep.png`): Semgrep
+**Successful**; **Gitleaks** y **CodeQL** quedaron **Failing**, sin bloquear
+el merge (GitHub reportó "No conflicts with base branch"). CodeQL reportó
+"1 new alert including 1 high severity security vulnerability" — detalle aún
+sin revisar, registrado como **F-05** (pendiente de triage, no se asume
+severidad sin ver el hallazgo concreto). Gitleaks falló sin causa confirmada
+— puede ser un secreto real o, como advierte el propio workflow, que el repo
+de organización requiera `GITLEAKS_LICENSE` — registrado como **F-06**
+(pendiente de revisar el log del job).
 
 ## 4. Componentes y dependencias (SCA)
 
@@ -120,8 +129,13 @@ actualizó nada a ciegas):
 
 ## Pendientes
 
-- Habilitar y confirmar CodeQL Default setup y GitHub secret scanning nativo.
-- Revisar el resultado de Gitleaks del mismo PR.
+- Habilitar y confirmar GitHub secret scanning nativo (CodeQL y Dependabot ya
+  confirmados habilitados).
+- **F-05**: abrir el detalle del alert de CodeQL en `Security → Code
+  scanning` y hacer el mismo ejercicio de validación que F-02/F-03 (versión,
+  alcance, ¿aplica de verdad?) antes de decidir una corrección.
+- **F-06**: revisar el log del job Gitleaks en Actions para saber si falló
+  por un secreto real o por falta de `GITLEAKS_LICENSE`.
 - F-01 (secretos en texto plano) y F-04 (tags mutables de Actions) siguen
   **Abiertos** — correcciones propuestas en `docs/SECURITY.md`, no aplicadas
   aún.
