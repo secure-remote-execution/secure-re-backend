@@ -1,5 +1,10 @@
 server:
   port: 8081
+  # Nginx está delante en HTTPS y nos manda X-Forwarded-Proto; sin esto Spring
+  # ve la conexión como HTTP plano (habla con nginx por http://localhost:8081)
+  # y el HstsHeaderWriter de Spring Security nunca se activa (requiere
+  # request.isSecure()=true). Hallazgo F-07, validado con ZAP + curl manual.
+  forward-headers-strategy: framework
 
 spring:
   application:
