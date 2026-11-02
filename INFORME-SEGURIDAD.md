@@ -1,8 +1,11 @@
-# Informe de seguridad — Laboratorio FDSI (Lab 3/4)
+# Informe de seguridad — Laboratorio FDSI (Lab 5: seguridad en el ciclo de desarrollo)
 
 Consolida todo lo realizado sobre `secure-re-backend` y `secure-frontend`, en el
-orden de los 4 pasos del laboratorio. Detalle completo y verificable en
-`docs/SECURITY.md` de cada repo (hallazgos F-01 a F-04).
+orden de los 8 pasos del laboratorio. Detalle completo y verificable en
+`docs/SECURITY.md` y `docs/REPORTE_HALLAZGOS.md` de cada repo (hallazgos F-01 a
+F-07). Material del kit integrado: `seguridad-estatica.yml`,
+`dast-staging.yml`, `docs/SECURITY.md`, `docs/REPORTE_HALLAZGOS.md`,
+`docs/CHECKLIST_PR.md`.
 
 ## 1. Alcance y línea base
 
@@ -11,7 +14,8 @@ orden de los 4 pasos del laboratorio. Detalle completo y verificable en
 | URL | https://github.com/secure-remote-execution/secure-re-backend | https://github.com/secure-remote-execution/secure-frontend |
 | Tecnología | Java 21, Spring Boot 3.3, Spring Security + JWT, Spring Data JPA, PostgreSQL 16, Flyway | React 18, TypeScript, Vite, react-router-dom |
 | Rama | `security/lab-fdsi` | `security/lab-fdsi` |
-| Commit SHA | `eac91a787d56bab110187dc364a4c323da8a7784` | `40c0d53e4ecef8fb1755174eb6400f5fb6e93796` |
+| Commit línea base | `eac91a787d56bab110187dc364a4c323da8a7784` | `40c0d53e4ecef8fb1755174eb6400f5fb6e93796` |
+| Pull Request | [#6](https://github.com/secure-remote-execution/secure-re-backend/pull/6) | [#2](https://github.com/secure-remote-execution/secure-frontend/pull/2) |
 | Responsables | jdeltax \<vegavillamiljuanpablo@gmail.com\>, Tomas Olaya \<tomasdi.dev@gmail.com\> | idem |
 
 **Activos identificados**: API REST del backend, base de datos PostgreSQL
@@ -31,8 +35,9 @@ simular scripts. Toda operación queda trazada al usuario autenticado
 /api/scripts/simulate/history` (VIEWER|ADMIN), docs OpenAPI (pública).
 
 **Riesgo principal**: gestión de secretos — el `JWT_SECRET` por defecto y las
-contraseñas semilla (`Admin123!`, `Viewer123!`) están documentadas en texto
-plano en el repo (`application.yml`, README, migración SQL). Si un despliegue
+contraseñas de los usuarios semilla (valores no reproducidos aquí) están
+documentadas en texto plano en el repo (`application.yml`, README,
+`requests.http`, migración SQL). Si un despliegue
 real no sobreescribe `JWT_SECRET`, cualquiera con acceso de lectura puede
 forjar un JWT de rol `ADMIN` sin autenticarse legítimamente. Registrado como
 **F-01**.
@@ -87,10 +92,12 @@ disparó el workflow. Se descargó el artefacto `resultado-semgrep`
 el merge (GitHub reportó "No conflicts with base branch"). CodeQL reportó
 "1 new alert including 1 high severity security vulnerability" — detalle aún
 sin revisar, registrado como **F-05** (pendiente de triage, no se asume
-severidad sin ver el hallazgo concreto). Gitleaks falló sin causa confirmada
-— puede ser un secreto real o, como advierte el propio workflow, que el repo
-de organización requiera `GITLEAKS_LICENSE` — registrado como **F-06**
-(pendiente de revisar el log del job).
+severidad sin ver el hallazgo concreto). Gitleaks falló a los 5 s, antes de
+escanear. Siguiendo la indicación del kit para esta limitación, se corrió
+Gitleaks CLI sobre el historial completo de ambos repos (`--redact`): **sin
+fugas**. La falla del job es consistente con la exigencia de
+`GITLEAKS_LICENSE` en repos de organización — registrado como **F-06**,
+cerrado como limitación técnica justificada.
 
 ## 4. Componentes y dependencias (SCA)
 
@@ -122,23 +129,56 @@ actualizó nada a ciegas):
 - **Corrección**: override de `postgresql.version` a `42.7.14` (última en
   Maven Central, misma rama 42.7.x) en `pom.xml`, en vez de forzar un bump
   de la versión de Spring Boot completa (que sí sería un cambio de mayor
-  riesgo/incompatibilidad). Verificado con `mvn dependency:tree` y `mvn
-  package` (compila y empaqueta OK). Pendiente de probar contra Postgres real
-  (Docker no disponible en el entorno de trabajo). **Estado: Corregido,
-  pendiente verificación runtime.**
+  riesgo/incompatibilidad). Verificado con `mvn dependency:tree`, `mvn
+  package` y en runtime (backend arriba contra PostgreSQL real, login OK).
+  Commit `8041375`. **Estado: Corregido y verificado.**
+
+## 5. DAST pasivo
+
+El workflow del kit `dast-staging.yml` quedó en ambos repos, pero no se
+ejecutó: corre en un runner de GitHub que no alcanza nuestro staging (solo
+existe en `localhost` / IP de LAN). Como permite el enunciado, se corrió el
+mismo ZAP Baseline local con Docker contra `https://localhost`:
+**0 FAIL, 7 WARN, 61 PASS** (`docs/evidence/zap-baseline-report.html`).
+Limitación: el spider pasivo solo recorrió 5 URLs, porque es una SPA de React.
+
+## 6. Validación manual
+
+Hipótesis: el backend no envía `Strict-Transport-Security` aunque siempre está
+detrás de Nginx con HTTPS. Validada con un solo `POST /api/auth/login` con la
+cuenta de laboratorio, leyendo solo los headers. Causa raíz: Spring no
+confiaba en el `X-Forwarded-Proto` de Nginx. Registrado como **F-07**.
+
+## 7. Corrección y reescaneo
+
+- Backend: `server.forward-headers-strategy: framework` (commit `a49b93f`,
+  PR #6). Nginx: `add_header Strict-Transport-Security …` (fuera del repo).
+- Reescaneo ZAP: regla 10035 de `WARN` a `PASS`; **0 FAIL, 6 WARN, 62 PASS**
+  (`docs/evidence/zap-baseline-report-after.html`). `curl` muestra el header
+  en el backend y en el sitio estático.
+
+## 8. Entrega
+
+`docs/SECURITY.md`, `docs/REPORTE_HALLAZGOS.md` (formato del kit),
+`docs/CHECKLIST_PR.md`, PR #6 (backend) y #2 (frontend), evidencias en
+`docs/evidence/`.
+
+### Correcciones de los hallazgos de Semgrep
+
+- **F-04** (tags mutables): todas las Actions fijadas por SHA en
+  `seguridad-estatica.yml` y `dast-staging.yml`. Reescaneo Semgrep: 5 → 0.
+- **F-01** (secretos): `JWT_SECRET` obligatorio sin valor por defecto;
+  contraseñas de `admin`/`viewer` por `LAB_ADMIN_PASSWORD` /
+  `LAB_VIEWER_PASSWORD`, re-hasheadas al arrancar por
+  `SeedUserPasswordInitializer`; contraseñas en claro fuera de README y
+  `requests.http`; test unitario con 3 casos. La contraseña versionada en V2
+  pasó de login 200 a 401. Queda como **mitigado**: V2 no se edita (checksum de
+  Flyway), así que Semgrep sigue mostrando esos 2 hashes, ya retirados.
 
 ## Pendientes
 
 - Habilitar y confirmar GitHub secret scanning nativo (CodeQL y Dependabot ya
   confirmados habilitados).
 - **F-05**: abrir el detalle del alert de CodeQL en `Security → Code
-  scanning` y hacer el mismo ejercicio de validación que F-02/F-03 (versión,
-  alcance, ¿aplica de verdad?) antes de decidir una corrección.
-- **F-06**: revisar el log del job Gitleaks en Actions para saber si falló
-  por un secreto real o por falta de `GITLEAKS_LICENSE`.
-- F-01 (secretos en texto plano) y F-04 (tags mutables de Actions) siguen
-  **Abiertos** — correcciones propuestas en `docs/SECURITY.md`, no aplicadas
-  aún.
-- Verificar F-03 contra una instancia real de Postgres.
-- Secciones 4 y 5 de `docs/SECURITY.md` (validación antes/después, pentest
-  autorizado) siguen pendientes — no se fabricó evidencia que no existe.
+  scanning` y validar si aplica antes de decidir una corrección.
+- Guardar el `semgrep.json` del CI (antes) como `docs/evidence/semgrep-antes.json`.

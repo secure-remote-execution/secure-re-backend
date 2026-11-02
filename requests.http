@@ -1,5 +1,8 @@
 ### Variables
 @baseUrl = http://localhost:8081
+# Las contraseñas se leen de las variables de entorno (no se versionan)
+@adminPassword = {{$processEnv LAB_ADMIN_PASSWORD}}
+@viewerPassword = {{$processEnv LAB_VIEWER_PASSWORD}}
 
 ### Login como ADMIN (puede leer y ejecutar simulaciones)
 # @name loginAdmin
@@ -8,7 +11,7 @@ Content-Type: application/json
 
 {
   "username": "admin",
-  "password": "Admin123!"
+  "password": "{{adminPassword}}"
 }
 
 ### Login como VIEWER (solo lectura)
@@ -18,7 +21,7 @@ Content-Type: application/json
 
 {
   "username": "viewer",
-  "password": "Viewer123!"
+  "password": "{{viewerPassword}}"
 }
 
 ### Listar todos los dispositivos (requiere Authorization: Bearer <token> de cualquiera de los logins de arriba)

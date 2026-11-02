@@ -39,19 +39,25 @@ exception/    → manejo centralizado de errores
    docker compose up -d
    ```
 
-2. Variables de entorno (opcional, ya tienen defaults para desarrollo local —
-   **cambia `JWT_SECRET` fuera del laboratorio**):
+2. Variables de entorno. `JWT_SECRET`, `LAB_ADMIN_PASSWORD` y
+   `LAB_VIEWER_PASSWORD` son **obligatorias** y no tienen valor por defecto: sin
+   ellas la aplicación no arranca. Las de base de datos sí tienen defaults para
+   desarrollo local.
    ```bash
+   export JWT_SECRET="$(openssl rand -base64 48)"
+   export LAB_ADMIN_PASSWORD='<elige-una>'
+   export LAB_VIEWER_PASSWORD='<elige-otra>'
+   # opcionales:
    export DB_URL=jdbc:postgresql://localhost:5432/secure_product_challenge
    export DB_USER=spc_user
    export DB_PASSWORD=spc_password
-   export JWT_SECRET=lab4-fdsi-dev-secret-change-me-please-0123456789abcdef
    export JWT_EXPIRATION_MINUTES=480
    ```
+   Al cambiar `JWT_SECRET`, los tokens emitidos antes dejan de ser válidos.
 
 3. Ejecutar la aplicación:
    ```bash
-   ./mvnw spring-boot:run
+   mvn spring-boot:run
    ```
 
 4. La API queda en `http://localhost:8081`, Swagger UI en
@@ -59,13 +65,16 @@ exception/    → manejo centralizado de errores
 
 ## Autenticación y roles
 
-| Usuario  | Password     | Rol    | Permisos                                         |
-|----------|--------------|--------|---------------------------------------------------|
-| `admin`  | `Admin123!`  | ADMIN  | Leer inventario/historial + ejecutar simulaciones |
-| `viewer` | `Viewer123!` | VIEWER | Solo leer inventario/historial                    |
+| Usuario  | Contraseña              | Rol    | Permisos                                         |
+|----------|-------------------------|--------|---------------------------------------------------|
+| `admin`  | `$LAB_ADMIN_PASSWORD`   | ADMIN  | Leer inventario/historial + ejecutar simulaciones |
+| `viewer` | `$LAB_VIEWER_PASSWORD`  | VIEWER | Solo leer inventario/historial                    |
 
 Usuarios sembrados por la migración Flyway `V2__users_and_audit.sql` (solo para el
-laboratorio local; no hay endpoint de registro). El JWT se envía como
+laboratorio local; no hay endpoint de registro). Al arrancar,
+`SeedUserPasswordInitializer` reemplaza sus hashes por los de las contraseñas de
+las variables de entorno, así que los hashes que quedaron en V2 ya no
+corresponden a contraseñas válidas. El JWT se envía como
 `Authorization: Bearer <token>` en cada request protegido.
 
 ## Endpoints

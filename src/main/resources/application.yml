@@ -30,8 +30,14 @@ spring:
 
 app:
   jwt:
-    secret: ${JWT_SECRET:lab4-fdsi-dev-secret-change-me-please-0123456789abcdef}
+    # Sin valor por defecto a propósito (F-01): si falta JWT_SECRET la app no arranca.
+    secret: ${JWT_SECRET}
     expiration-minutes: ${JWT_EXPIRATION_MINUTES:480}
+  seed:
+    # Contraseñas de los usuarios de laboratorio; se re-hashean al arrancar y
+    # reemplazan los hashes sembrados por V2 (F-01).
+    admin-password: ${LAB_ADMIN_PASSWORD}
+    viewer-password: ${LAB_VIEWER_PASSWORD}
   cors:
     # Lista separada por comas. Agrega aquí el origen real del navegador si accedes
     # por IP/dominio a través de Nginx (ej. https://10.239.28.54), o cambia por env var.
