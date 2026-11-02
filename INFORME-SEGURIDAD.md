@@ -179,6 +179,8 @@ confiaba en el `X-Forwarded-Proto` de Nginx. Registrado como **F-07**.
 
 - Habilitar y confirmar GitHub secret scanning nativo (CodeQL y Dependabot ya
   confirmados habilitados).
-- **F-05**: abrir el detalle del alert de CodeQL en `Security → Code
-  scanning` y validar si aplica antes de decidir una corrección.
+- **F-05** (CodeQL, CSRF desactivado): triado como **falso positivo**. La API
+  no usa cookies (solo `Authorization: Bearer`), y el autofix de Copilot dejaba
+  el login en 403. Falta descartar la alerta en GitHub
+  (`Security → Code scanning → Dismiss → False positive`).
 - Guardar el `semgrep.json` del CI (antes) como `docs/evidence/semgrep-antes.json`.

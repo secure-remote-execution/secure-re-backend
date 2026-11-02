@@ -21,7 +21,7 @@ Los tres riesgos principales del proyecto son:
 
 **Corregidos:** F-02 (vite), F-03 (driver PostgreSQL), F-04 (Actions fijadas por SHA) y F-07 (HSTS), cada uno con evidencia antes y después.  
 **Mitigado:** F-01 (contraseñas rotadas al arrancar y secreto JWT obligatorio; los hashes viejos siguen en V2 como contraseñas retiradas).  
-**Abierto:** F-05, pendiente de triage.  
+**Falso positivo justificado:** F-05 (CodeQL, CSRF desactivado en una API sin cookies; el autofix rompía el login).  
 **Cerrado como limitación técnica:** F-06 (Gitleaks en Actions requiere licencia por ser un repositorio de organización; se usó el CLI como alternativa).
 
 ## Metodología
@@ -32,7 +32,7 @@ Identificación del alcance → SAST → detección de secretos → SCA → DAST
 |---|---|---|
 | SAST | Semgrep (`p/owasp-top-ten`, `p/secrets`) en Actions | 7 hallazgos (5 WARNING, 2 ERROR); 0 en el código Java de la aplicación |
 | SAST (reescaneo) | Semgrep local, mismas reglas | Backend 2 (hashes retirados de V2), frontend 0 |
-| SAST | CodeQL Default setup | Habilitado; reporta 1 alerta de severidad alta (F-05) |
+| SAST | CodeQL Default setup | Habilitado; 1 alerta alta (CSRF desactivado): falso positivo justificado (F-05) |
 | Secretos | Gitleaks Action en Actions | Falla a los 5 s por licencia de organización (F-06) |
 | Secretos | Gitleaks CLI local (alternativa del kit) | Historial completo de ambos repos (8 y 7 commits): **sin fugas** |
 | SCA | Dependabot alerts | Habilitado; 0 alertas abiertas |
@@ -132,21 +132,26 @@ Identificación del alcance → SAST → detección de secretos → SCA → DAST
 - **Corrección (commit / pull request):** Limitación documentada. Alternativas: GitHub secret scanning nativo, o un `GITLEAKS_LICENSE` gratuito para uso académico.
 - **Resultado del reescaneo:** CLI sin fugas.
 
-## Hallazgo F-05 — Alerta de CodeQL (pendiente de triage)
-- **Título:** El check `Code scanning results / CodeQL` del PR reporta "1 new alert including 1 high severity security vulnerability".
-- **Categoría OWASP/CWE:** Por determinar.
-- **Severidad y justificación:** Alta según GitHub. Aplicabilidad real sin confirmar.
-- **Evidencia minimizada:** `docs/evidence/pr-checks-codeql-gitleaks-semgrep.png`.
-- **Impacto en C/I/D:** Por determinar.
-- **Pasos de validación segura en entorno propio:** Pendiente: abrir el detalle en `Security → Code scanning`.
-- **Corrección (commit / pull request):** Pendiente.
-- **Resultado del reescaneo:** Pendiente.
+## Hallazgo F-05 — CodeQL: protección CSRF desactivada (falso positivo)
+- **Título:** CodeQL marca que `SecurityConfig` desactiva la protección CSRF de Spring (`.csrf(csrf -> csrf.disable())`).
+- **Categoría OWASP/CWE:** OWASP A01:2021 Broken Access Control; CWE-352 (Cross-Site Request Forgery).
+- **Severidad y justificación:** GitHub la reporta como alta. **Triage: falso positivo en este contexto.** La regla es correcta para apps con sesión por cookie, pero esta API no usa cookies.
+- **Evidencia minimizada:** check `Code scanning results / CodeQL` en rojo en el PR (`docs/evidence/pr-checks-codeql-gitleaks-semgrep.png`). Copilot Autofix sugiere cambiarlo por `.csrf(csrf -> {})`.
+- **Impacto en C/I/D:** Ninguno real en la arquitectura actual. CSRF requiere que el navegador envíe credenciales automáticamente, y aquí no hay ninguna que envíe solo.
+- **Pasos de validación segura en entorno propio:**
+  1. Login con la cuenta de laboratorio: la respuesta no trae `Set-Cookie`, así que no hay cookie de sesión.
+  2. `POST /api/scripts/simulate` con cookie y auth básica, desde un `Origin` ajeno: `HTTP 401`. Solo se acepta `Authorization: Bearer`.
+  3. El frontend guarda el JWT en `localStorage` y lo agrega con JS (`services/api.ts`). Un sitio atacante no puede leerlo ni hacer que el navegador lo envíe.
+  4. Prueba del autofix, temporal y revertida: con `.csrf(csrf -> {})`, el **login legítimo pasa de `200` a `403`**. El autofix rompe la app sin ganar seguridad.
+- **Corrección (commit / pull request):** No se aplica el autofix. Se agregó un comentario en `SecurityConfig` con la justificación, y la alerta se descarta en GitHub como *False positive* (`Security → Code scanning → alerta → Dismiss`). Si en el futuro el JWT pasa a una cookie, CSRF debe reactivarse.
+- **Resultado del reescaneo:** Al descartar la alerta, el check de CodeQL del PR queda en verde. La configuración original sigue funcionando: login `200`.
 
 ## Reflexión final
 
 **Qué identificaron las herramientas:** cada una vio una capa distinta. Semgrep encontró problemas de configuración del pipeline (F-04) y de secretos (F-01). `npm audit` y el GitHub Advisory Database encontraron las dependencias vulnerables (F-02, F-03). ZAP encontró la falta de headers en lo que se sirve (F-07).
 
 **Qué omitieron:**
+- CodeQL marcó CSRF desactivado sin poder ver que la API no usa cookies, y su autofix (Copilot) habría dejado el login en 403. Una sugerencia automática no reemplaza el triage: hay que validarla contra la arquitectura real.
 - Ninguna detectó directamente el valor por defecto de `JWT_SECRET` en `application.yml`: ni Semgrep ni Gitleaks lo marcaron. Semgrep marcó los hashes BCrypt (con `confidence: LOW`), pero no las contraseñas en claro que los generan.
 - Dependabot mostró 0 alertas mientras el driver de PostgreSQL tenía tres CVE. Hubo que buscarlas a mano.
 - ZAP solo recorrió 5 URLs: como es una SPA de React, no navega las rutas internas ni llama a la API.

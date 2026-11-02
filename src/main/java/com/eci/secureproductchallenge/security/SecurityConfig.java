@@ -43,6 +43,9 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
+                // CSRF desactivado a propósito (alerta CodeQL F-05, triage: falso positivo):
+                // la auth es solo por header Bearer que pone el frontend; no hay cookies ni
+                // basic auth que el navegador envíe solo. Activarlo rompe el login (403).
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
