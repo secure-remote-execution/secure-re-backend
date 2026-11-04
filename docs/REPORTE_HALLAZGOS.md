@@ -46,7 +46,7 @@ Identificación del alcance → SAST → detección de secretos → SCA → DAST
 
 ## Hallazgo F-07 — Falta del header Strict-Transport-Security (HSTS)
 - **Título:** El backend y el sitio estático no envían `Strict-Transport-Security`.
-- **Categoría OWASP/CWE:** OWASP A05:2021 Security Misconfiguration; CWE-319 (Cleartext Transmission of Sensitive Information). Regla ZAP 10035.
+- **Categoría OWASP/CWE:** OWHallazgo F-07ASP A05:2021 Security Misconfiguration; CWE-319 (Cleartext Transmission of Sensitive Information). Regla ZAP 10035.
 - **Severidad y justificación:** Media. Sin HSTS, un atacante en la red puede bajar la conexión a HTTP. En este despliegue Nginx no escucha en el puerto 80, lo que reduce la exposición, por eso no es alta. Es defensa en profundidad.
 - **Evidencia minimizada:** ZAP Baseline marcó la regla 10035 como `WARN-NEW` en 4 URLs servidas por Nginx (`docs/evidence/zap-baseline-report.html`). Al investigar la causa en el backend:
   ```bash
