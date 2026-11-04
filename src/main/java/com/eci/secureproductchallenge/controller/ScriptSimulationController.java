@@ -8,11 +8,12 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-// TODO: Lab 4 - agregar Spring Security + JWT + roles aquí (@PreAuthorize, etc.)
+// Lab 4: requiere autenticación (Spring Security + JWT). Simular scripts es ADMIN-only.
 @RestController
 @RequestMapping("/api/scripts")
 @RequiredArgsConstructor
@@ -23,7 +24,8 @@ public class ScriptSimulationController {
 
     @PostMapping("/simulate")
     @ResponseStatus(HttpStatus.CREATED)
-    @Operation(summary = "Simula la ejecución de un script sobre un dispositivo (no ejecuta nada real)")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Simula la ejecución de un script sobre un dispositivo (no ejecuta nada real). Requiere rol ADMIN.")
     public ScriptSimulationResponse simulate(@Valid @RequestBody ScriptSimulationRequest request) {
         return simulationService.simulate(request);
     }

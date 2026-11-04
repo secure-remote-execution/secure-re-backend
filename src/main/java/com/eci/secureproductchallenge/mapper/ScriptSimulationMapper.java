@@ -16,6 +16,7 @@ public class ScriptSimulationMapper {
                 .success(simulation.isSuccess())
                 .output(simulation.getOutput())
                 .requestedAt(simulation.getRequestedAt())
+                .performedBy(simulation.getPerformedBy())
                 .build();
     }
 }
